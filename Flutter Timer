@@ -1,0 +1,56 @@
+ int timerVal = 0;
+  int initialVal = 0;
+  SharedPreferences sharedPreferences;
+  
+  @override
+  initState() {
+    
+    // I am using the StopWatchTimer package: https://pub.dev/packages/stop_watch_timer
+    StopWatchTimer stopWatchTimer = StopWatchTimer(
+      mode: StopWatchMode.countUp,
+      onChangeRawSecond: (int value) {
+        setState(() {
+          timerVal = value;
+        });
+      },
+    );
+
+    initialVal = timerVal;
+
+    // check if a timer was already on. if yes, resume from there.
+    if (sharedPreferences.containsKey('timerStartTime')) {
+      DateTime lastUnstoppedTimerValue =
+          DateTime.parse(sharedPreferences.getString('timerStartTime')!);
+      Duration timeElapsed = DateTime.now().difference(lastUnstoppedTimerValue);
+      stopWatchTimer.setPresetSecondTime(initialVal + timeElapsed.inSeconds);
+      this.startTimer();
+    } else {
+      stopWatchTimer.setPresetSecondTime(initialVal);
+    }
+    super.initState();
+  }
+  
+  
+  startTimer() {
+    stopWatchTimer.onExecute.add(StopWatchExecute.start);
+  }
+
+  stopTimer() {
+    int quantum = timerVal- initialVal;
+    if (quantum > 0) {
+      // bussiness logic
+    }
+    stopWatchTimer.onExecute.add(StopWatchExecute.stop);
+    initialVal = timerVal;
+    if (sharedPreferences.containsKey('timerStartTime')) {
+      sharedPreferences.remove('timerStartTime');
+    }
+  }
+      
+  // This is where you need to save unstopped timers
+  @override
+  dispose() async {
+    sharedPreferences.setString('timerStartTime', DateTime.now().toString());
+    stopWatchTimer.dispose();
+    super.dispose();
+  }
